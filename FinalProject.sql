@@ -8,14 +8,29 @@ CREATE TABLE address (
 	addressID INT PRIMARY KEY AUTO_INCREMENT, 
     streetNum INT NOT NULL,
     streetName VARCHAR(255) NOT NULL,
-    zipcode VARCHAR(10) NOT NULL,
-    state VARCHAR(50) NOT NULL
+    city VARCHAR(50) NOT NULL,
+    state VARCHAR(50) NOT NULL,
+    zipcode VARCHAR(10) NOT NULL
 );
 
 LOCK TABLES address WRITE;
 INSERT INTO address VALUES
-	('1', '123', 'Main Street', '12345', 'CA'),
-	('2', '456', 'Elm Street', '67890', 'NY');
+	(1, 480, 'S Bay Harbor Trail', 'Boston', 'MA', 02118),
+	(2, 66, 'Chandler Street', 'Boston', 'MA', 02116),
+    (3, 90, 'Warren Ave', 'Boston', 'MA', 02116),
+    (4, 600, 'East Street', 'Boston', 'MA', 02127),
+    (5, 85, 'Mt Vernon Street', 'Boston', 'MA', 02108),
+    (6, 950, 'Dorchester Avenue', 'Boston', 'MA', 02125),
+    (7, 77, 'Stratton Street', 'Boston', 'MA', 02124),
+    (8, 34, 'Catherine Street', 'Boston', 'MA', 02131),
+    (9, 101, 'Fernwood Road', 'Chestnut Hill', 'MA', 02467),
+    (10, 20, 'Washington Street', 'Brighton', 'MA', 02135),
+    (11, 24, 'Somerset Road', 'Brookline', 'MA', 02445),
+    (12, 216, 'Summit Avenue', 'Brookline', 'MA', 02446),
+    (13, 201, 'Pearl Street', 'Cambridge', 'MA', 02139),
+    (14, 427, 'Commercial Street', 'Boston', 'MA', 02109),
+    (15, 160, 'Federal Street', 'Boston', 'MA', 02110),
+    (16, 27, 'Oxford Street', 'Boston', 'MA', 02111);
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS company;
@@ -29,8 +44,9 @@ CREATE TABLE company(
 
 LOCK TABLES company WRITE;
 INSERT INTO company VALUES
-	('ABC Company', '1'),
-	('XYZ Corporation', '2');
+	('HealthGuard Solutions', '1'),
+	('VitalRx Pharmacy', '2'),
+	('PrimeHealthMD', '3');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS customer;
@@ -52,8 +68,9 @@ CREATE TABLE customer (
 
 LOCK TABLES customer WRITE;
 INSERT INTO customer VALUES
-	('1', 'John', 'Doe', '1234567890', 'john@example.com', '1', 'ABC Company'),
-	('2', 'Jane', 'Smith', '1234567891', 'jane@example.com', '2', 'XYZ Corporation');
+	(1, 'Samantha', 'Miller', '6171234567', 'samantham@gmail.com', 4, 'HealthGuard Solutions'),
+	(2, 'Michael', 'Johnson', '6179876543', 'michaelj@gmail.com', 5, 'VitalRx Pharmacy'),
+	(3, 'Emily', 'Anderson', '3394567890', 'emily.anderson@yahoo.com', 6, 'PrimeHealthMD');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS employee;
@@ -77,8 +94,12 @@ CREATE TABLE employee (
 
 LOCK TABLES employee WRITE;
 INSERT INTO employee VALUES
-	('1', 'Manager', 'David', 'Johnson', '1980-01-01', '2147124567', 'david@example.com', '1', 'ABC Company'),
-	('2', 'Regular', 'Sarah', 'Davis', '1990-02-02', '2147476543', 'sarah@example.com', '2', 'XYZ Corporation');
+	(1, 'Manager', 'David', 'Johnson', '1980-01-01', '6177124567', 'david@healthguard.com', 7, 'HealthGuard Solutions'),
+	(2, 'Regular', 'Sarah', 'Davis', '1990-02-15', '2897476543', 'sarah@healthguard.com', 8, 'HealthGuard Solutions'),
+	(3, 'Manager', 'Olivia', 'Wilson', '1985-09-03', '6177472674', 'olivia@vitalrx.com', 9, 'VitalRx Pharmacy'),
+	(4, 'Regular', 'Liam', 'Walker', '1992-09-22', '6174563267', 'liam@vitalrx.com', 10, 'VitalRx Pharmacy'),
+	(5, 'Manager', 'Harper', 'Scott', '1988-05-03', '3397891234', 'harper@primehealth.com', 11, 'PrimeHealthMD'),
+	(6, 'Regular', 'Emma', 'Murphy', '1996-12-12', '6172560125', 'harper@primehealth.com', 12, 'PrimeHealthMD');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS supplier;
@@ -95,8 +116,8 @@ CREATE TABLE supplier(
 
 LOCK TABLES supplier WRITE;
 INSERT INTO supplier VALUES
-	('1', 'Supplier 1', '1111111111', 'supplier1@example.com', '1'),
-	('2', 'Supplier 2', '2222222222', 'supplier2@example.com', '2');
+	(1, 'MedSupply Direct', '6171112345', 'help@medsupplydirect.com', 13),
+	(2, 'PrimeSource Supplies', '6172220987', 'info@primesource.com', 14);
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS supplier_receipt;
@@ -121,7 +142,7 @@ CREATE TABLE supplier_receipt(
 LOCK TABLES supplier_receipt WRITE;
 INSERT INTO supplier_receipt VALUES
 	('1', '2023-06-01', '1000.00', 'Check', '100.00', '900.00', '100.00', '1', '1'),
-    ('2', '2023-06-02', '500.00', 'VISA', '50.00', '450.00', '50.00', '2', '2');
+	('2', '2023-06-02', '500.00', 'VISA', '50.00', '450.00', '50.00', '2', '2');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS customer_receipt;
@@ -146,14 +167,13 @@ CREATE TABLE customer_receipt(
 LOCK TABLES customer_receipt WRITE;
 INSERT INTO customer_receipt VALUES
 	('1', '2023-06-01', '2000.00', 'Cash', '200.00', '1800.00', '200.00', '1', '1'),
-    ('2', '2023-06-02', '1500.00', 'Mastercard', '150.00', '1350.00', '150.00' ,'2', '2');
+	('2', '2023-06-02', '1500.00', 'Mastercard', '150.00', '1350.00', '150.00' ,'2', '2');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS manufacturer;
 CREATE TABLE manufacturer(
 	manufacturerName VARCHAR(200) PRIMARY KEY,
 	drugsProduced ENUM("OTC", "BTC") NOT NULL,
-	scientificName VARCHAR(200) UNIQUE NOT NULL,
 	addressID INT UNIQUE NOT NULL,
     CONSTRAINT manufacturer_fk_address
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
@@ -162,8 +182,8 @@ CREATE TABLE manufacturer(
 
 LOCK TABLES manufacturer WRITE;
 INSERT INTO manufacturer VALUES
-	('Manufacturer 1', 'OTC', 'Scientific Name 1', '1'),
-    ('Manufacturer 2', 'BTC', 'Scientific Name 2', '2');
+	('HealthPro Manufacturing', 'OTC', 15),
+	('Apex Solutions', 'BTC', 16);
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS drug;
@@ -187,8 +207,9 @@ CREATE TABLE drug(
 
 LOCK TABLES drug WRITE;
 INSERT INTO drug VALUES
-	('1', 'Drug 1', 'Scientific Name 1', 'depressant', '25.00', 'Schedule II', '100', 'Manufacturer 1', '10.00', '1'),
-    ('2', 'Drug 2', 'Scientific Name 2', 'stimulant', '30.00', 'Schedule III', '200', 'Manufacturer 2', '15.00', '2');
+	(1, 'Amphetamine', '(RS)-1-phenylpropan-2-amine', 'stimulant', '25.00', 'Schedule II', '100', 'HealthPro Manufacturing', '10.00', 1),
+	(2, 'Acetaminophen', 'N-(4-hydroxyphenyl)ethanamide', 'analgesic', '20.00', 'Schedule I', '150', 'HealthPro Manufacturing', '12.50', 1),
+	(3, 'Ibuprofen', '2-(4-isobutylphenyl)propanoic acid', 'analgesic', '30.00', 'Schedule I', '200', 'Apex Solutions', '15.00', 2);
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS stored_drug;
@@ -207,8 +228,8 @@ CREATE TABLE stored_drug(
 
 LOCK TABLES stored_drug WRITE;
 INSERT INTO stored_drug VALUES
-	('1', '1', 'Drug 1', '2023-01-01', '2024-01-01', '50', '2023-01-01'),
-    ('2', '2', 'Drug 2', '2023-02-02', '2024-02-02', '100', '2023-02-02');
+	('1', '1', 'Amphetamine', '2023-01-01', '2024-01-01', '50', '2023-01-01'),
+	('2', '2', 'Ibuprofen', '2023-02-02', '2024-02-02', '100', '2023-02-02');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS supplier_company;
@@ -226,8 +247,9 @@ CREATE TABLE supplier_company(
 
 LOCK TABLES supplier_company WRITE;
 INSERT INTO supplier_company VALUES
-	('1', 'ABC Company'),
-    ('2', 'XYZ Corporation');
+	(1, 'HealthGuard Solutions'),
+	(1, 'VitalRx Pharmacy'),
+	(2, 'PrimeHealthMD');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS supplier_receipt_drug;
@@ -248,7 +270,7 @@ CREATE TABLE supplier_receipt_drug(
 LOCK TABLES supplier_receipt_drug WRITE;
 INSERT INTO supplier_receipt_drug VALUES
 	(1, 1, 10, 100.00),
-    (2, 2, 20, 200.00);
+	(2, 2, 20, 200.00);
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS drug_manufacturer;
@@ -266,8 +288,8 @@ CREATE TABLE drug_manufacturer(
 
 LOCK TABLES drug_manufacturer WRITE;
 INSERT INTO drug_manufacturer VALUES
-	(1, 'Manufacturer 1'),
-    (2, 'Manufacturer 2');
+	(1, 'HealthPro Manufacturing'),
+	(2, 'Apex Solutions');
 UNLOCK TABLES;
 
 DROP TABLE IF EXISTS customer_receipt_drug;
@@ -288,5 +310,5 @@ CREATE TABLE customer_receipt_drug(
 LOCK TABLES customer_receipt_drug WRITE;
 INSERT INTO customer_receipt_drug VALUES
 	(1, 1, 5, 50.00),
-    (2, 2, 10, 100.00);
+	(2, 2, 10, 100.00);
 UNLOCK TABLES;
