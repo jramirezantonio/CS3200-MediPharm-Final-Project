@@ -312,3 +312,29 @@ INSERT INTO customer_receipt_drug VALUES
 	(1, 1, 5, 50.00),
 	(2, 2, 10, 100.00);
 UNLOCK TABLES;
+
+## Add drug
+DROP PROCEDURE IF EXISTS AddDrug;
+DELIMITER $$
+CREATE PROCEDURE AddDrug (
+	IN drugID INT,
+	IN drugName VARCHAR(100),
+	IN scientificName VARCHAR(200),
+	IN drugCategory ENUM("depressant", "stimulant", "hallucinogen", "anesthetic", "analgesic", 
+	"inhalant", "cannabis"),
+	IN storageTemp DECIMAL(4,2),
+	IN dangerousLevel ENUM("Schedule I", "Schedule II", "Schedule III", "Schedule IV", 
+	"Schedule V"),
+	IN quantity INT,
+	IN manufacturerName VARCHAR(200),
+	IN unitPrice DECIMAL(13, 4),
+	IN storageLocation INT
+)
+BEGIN
+  INSERT INTO drug (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation)
+	VALUES (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation);
+END $$
+
+DELIMITER ;
+
+CALL AddDrug(5, 'A', 'A', 'depressant', 80.00, 'Schedule I', 50, 'Apex Solutions', '100.00', 1);
