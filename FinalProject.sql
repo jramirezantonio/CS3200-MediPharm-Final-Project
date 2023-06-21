@@ -483,3 +483,62 @@ DELIMITER ;
 -- CALL updateCustomerInfo(10, 'email', 'bob@gmail.com');
 -- CALL updateCustomerInfo(1, 'email', 'bob@gmail.com');
 -- CALL updateCustomerInfo(1, 'mobile', '9086738912');
+
+
+## SHANNEN addAddress & addEmployee BELOW ###############
+
+DROP PROCEDURE IF EXISTS AddAddress;
+DELIMITER $$
+CREATE PROCEDURE AddAddress(
+    IN streetNum INT,
+    IN streetName VARCHAR(255),
+    IN city VARCHAR(50),
+    IN state VARCHAR(50),
+    IN zipcode VARCHAR(10)
+)
+BEGIN
+	-- Insert the address into the address table
+	INSERT INTO address(streetNum, streetName, city, state, zipcode)	
+		VALUES (streetNum, streetName, city, state, zipcode);
+END $$
+
+DELIMITER ;
+
+CALL AddAddress(40, 'Tuttle Street', 'Boston', 'MA', 02125);
+
+-- add address prereq that you can call in addemployee and addcustomer
+## Manager can add an employee
+DROP PROCEDURE IF EXISTS AddEmployee;
+DELIMITER $$
+CREATE PROCEDURE AddEmployee (
+  IN managerID INT, -- manager puts in their ID to put in new employee
+  IN employeeType ENUM("Manager", "Regular"),
+  IN firstName VARCHAR(100),
+  IN lastName VARCHAR(100),
+  IN DOB DATE,
+  IN mobilePhone VARCHAR(10),
+  IN emailAddress VARCHAR(225)
+)
+BEGIN
+	DECLARE isManager INT;
+    DECLARE addressID INT;
+    DECLARE companyName VARCHAR(100);
+	
+    SELECT address.addressID INTO addressID  FROM address ORDER BY address.addressID DESC LIMIT 1;
+    SELECT employee.companyName INTO companyName FROM employee WHERE managerID = employee.employeeID;
+    
+	-- SELECT COUNT(*) INTO isManager WHERE managerID IN (SELECT employeeID FROM employee WHERE employeeType = 'Manager');
+    SELECT COUNT(*) INTO isManager FROM employee WHERE managerID IN (SELECT employeeID FROM employee WHERE employeeType = 'Manager');
+    
+    IF isManager = 1 THEN
+		INSERT INTO employee(employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName)
+			VALUES (employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName);
+		SELECT 'Successfully added employee.' AS Message;
+	ELSE
+		SELECT 'Invalid manager ID. Not authorized to add employee.' AS Message;
+  END IF;
+END $$
+
+DELIMITER ;
+
+CALL AddEmployee (1, 'Regular', 'Shannen', 'Espinosa', '2002-11-06', '6176377190', 'espinosa.s@northeastern.edu');
