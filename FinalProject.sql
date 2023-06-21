@@ -456,10 +456,11 @@ DELIMITER ;
 -- CALL getInvoice('customer', 200); 
 -- CALL getInvoice('supplier', 2);
 -- CALL getInvoice('supplier', 200);
--- CALL getInvoice('employee', 1);
+CALL getInvoice('employee', 1);
 
 
 -- update customer contact information (email or mobile phone number) (UPDATE)
+DROP PROCEDURE IF EXISTS updateCustomerInfo;
 DELIMITER $$
 CREATE PROCEDURE updateCustomerInfo(IN custID INT, IN in_field VARCHAR(255), IN new_info VARCHAR(255))
 BEGIN
@@ -469,8 +470,10 @@ BEGIN
 		CASE 
 			WHEN in_field = 'mobile' THEN
 				UPDATE customer SET mobilePhone = new_info WHERE customerID = custID;
+                SELECT "Updated customer's mobile number" AS message;
 			WHEN in_field = 'email' THEN
 				UPDATE customer SET emailAddress = new_info WHERE customerID = custID;
+                SELECT "Updated customer's email address" AS message;
 			ELSE
 				SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Invalid field';
 		END CASE;
@@ -485,6 +488,7 @@ DELIMITER ;
 -- CALL updateCustomerInfo(1, 'mobile', '9086738912');
 
 -- update quantity of drug, throws error if ID does not exist or new quantity is negative
+DROP PROCEDURE IF EXISTS updateDrugQuantity;
 DELIMITER $$
 CREATE PROCEDURE updateDrugQuantity(IN drugID_param INT, IN new_quantity INT)
 BEGIN
@@ -502,6 +506,7 @@ BEGIN
         UPDATE drug
         SET quantity = new_quantity
         WHERE drugID = drugID_param;
+        SELECT "Updated drug quantity" AS message;
     END IF;
 END $$
 DELIMITER ;
@@ -528,6 +533,7 @@ BEGIN
 	-- Insert the address into the address table
 	INSERT INTO address(streetNum, streetName, city, state, zipcode)	
 		VALUES (streetNum, streetName, city, state, zipcode);
+	SELECT "Added address" AS message;
 END $$
 
 DELIMITER ;
@@ -561,6 +567,7 @@ BEGIN
     IF isManager = 1 THEN
 		INSERT INTO employee(employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName)
 			VALUES (employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName);
+            
 		SELECT 'Successfully added employee.' AS Message;
 	ELSE
 		SELECT 'Invalid manager ID. Not authorized to add employee.' AS Message;
@@ -570,3 +577,5 @@ END $$
 DELIMITER ;
 
 CALL AddEmployee (1, 'Regular', 'Shannen', 'Espinosa', '2002-11-06', '6176377190', 'espinosa.s@northeastern.edu');
+
+Select * from drug;
