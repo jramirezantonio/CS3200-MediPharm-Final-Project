@@ -374,3 +374,86 @@ DELIMITER ;
 -- DelTupleDrug tests
 -- CALL DelTupleDrug(4);
 -- SELECT * FROM drug;
+
+
+-- returns table of all drugs and their stock 
+DELIMITER $$
+CREATE PROCEDURE returnDrugStock()
+BEGIN
+    SELECT drugName, quantity FROM drug;
+END $$
+DELIMITER ;
+-- Tests 
+-- CALL returnDrugStock(); 
+
+-- HELPER METHODS 
+-- Procedure to get customer receipt details
+DELIMITER $$
+CREATE PROCEDURE getCustomerReceipt(IN receiptID INT)
+BEGIN
+    DECLARE receiptExists INT;
+
+    SELECT COUNT(*) INTO receiptExists 
+    FROM customer_receipt
+    WHERE customerInvoiceID = receiptID;
+
+    IF receiptExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: No customer receipt found with the provided ID.';
+    ELSE
+        SELECT *
+        FROM customer_receipt
+        WHERE customerInvoiceID = receiptID;
+    END IF;
+END$$
+DELIMITER ;
+-- Tests
+-- CALL getCustomerReceipt(1); 
+-- CALL getCustomerReceipt(100); 
+
+-- Procedure to get supplier receipt details
+DELIMITER $$
+CREATE PROCEDURE getSupplierReceipt(IN receiptID INT)
+BEGIN
+    DECLARE receiptExists INT;
+
+    SELECT COUNT(*) INTO receiptExists 
+    FROM supplier_receipt
+    WHERE supplierInvoiceID = receiptID;
+
+    IF receiptExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: No supplier receipt found with the provided ID.';
+    ELSE
+        SELECT *
+        FROM supplier_receipt
+        WHERE supplierInvoiceID = receiptID;
+    END IF;
+END$$
+DELIMITER ;
+-- Tests
+-- CALL getSupplierReceipt(1); 
+-- CALL getSupplierReceipt(100); 
+
+-- Returns invoice of chosen type and ID
+DELIMITER $$
+CREATE PROCEDURE getInvoice(IN invoiceType VARCHAR(10), IN receiptID INT)
+BEGIN
+    IF invoiceType = 'customer' THEN
+        SELECT 'Customer Invoice Selected' AS message;
+        CALL getCustomerReceipt(receiptID); 
+    ELSEIF invoiceType = 'supplier' THEN
+		SELECT 'Supplier Invoice Selected' AS message;
+        CALL getSupplierReceipt(receiptID);
+    ELSE
+		SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Error: Invalid invoice type. Please enter either "customer" or "supplier".';
+    END IF;
+END$$
+DELIMITER ;
+-- Tests
+-- CALL getInvoice('customer', 1);
+-- CALL getInvoice('customer', 200); 
+-- CALL getInvoice('supplier', 2);
+-- CALL getInvoice('supplier', 200);
+-- CALL getInvoice('employee', 1);
