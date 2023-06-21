@@ -457,3 +457,29 @@ DELIMITER ;
 -- CALL getInvoice('supplier', 2);
 -- CALL getInvoice('supplier', 200);
 -- CALL getInvoice('employee', 1);
+
+
+-- update customer contact information (email or mobile phone number) 
+DELIMITER $$
+CREATE PROCEDURE updateCustomerInfo(IN custID INT, IN in_field VARCHAR(255), IN new_info VARCHAR(255))
+BEGIN
+	IF NOT EXISTS (SELECT 1 FROM customer WHERE customerID = custID) THEN
+		SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: ID does not exist';
+	ELSE
+		CASE 
+			WHEN in_field = 'mobile' THEN
+				UPDATE customer SET mobilePhone = new_info WHERE customerID = custID;
+			WHEN in_field = 'email' THEN
+				UPDATE customer SET emailAddress = new_info WHERE customerID = custID;
+			ELSE
+				SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Error: Invalid field';
+		END CASE;
+	END IF;
+END$$
+
+DELIMITER ;
+-- Test
+-- CALL updateCustomerInfo(1, 'address', '123 Park Street');
+-- CALL updateCustomerInfo(10, 'email', 'bob@gmail.com');
+-- CALL updateCustomerInfo(1, 'email', 'bob@gmail.com');
+-- CALL updateCustomerInfo(1, 'mobile', '9086738912');
