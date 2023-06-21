@@ -314,7 +314,7 @@ UNLOCK TABLES;
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
--- Function to insert a new tuple into drug table
+-- Function to insert a new tuple into drug table (CREATE)
 DROP PROCEDURE IF EXISTS NewTupleDrug;
 DELIMITER $$
 CREATE PROCEDURE NewTupleDrug (
@@ -354,7 +354,7 @@ DELIMITER ;
 -- CALL NewTupleDrug(4, 'Amphetamine', '(RS)-2-phenylpropan-2-amine', 'stimulant', '25.00', 'Schedule III', '100', 'Apex Solutions', '10.00', 1);
 -- SELECT * FROM drug;
 
--- Function to delete an existing drug tuple
+-- Function to delete an existing drug tuple (DELETE)
 DROP PROCEDURE IF EXISTS DelTupleDrug;
 DELIMITER $$
 CREATE PROCEDURE DelTupleDrug (IN id INT)
@@ -376,7 +376,7 @@ DELIMITER ;
 -- SELECT * FROM drug;
 
 
--- returns table of all drugs and their stock 
+-- returns table of all drugs and their stock (READ)
 DELIMITER $$
 CREATE PROCEDURE returnDrugStock()
 BEGIN
@@ -411,7 +411,7 @@ DELIMITER ;
 -- CALL getCustomerReceipt(1); 
 -- CALL getCustomerReceipt(100); 
 
--- Procedure to get supplier receipt details
+-- Procedure to get supplier receipt details (HELPER - READ)
 DELIMITER $$
 CREATE PROCEDURE getSupplierReceipt(IN receiptID INT)
 BEGIN
@@ -435,9 +435,9 @@ DELIMITER ;
 -- CALL getSupplierReceipt(1); 
 -- CALL getSupplierReceipt(100); 
 
--- Returns invoice of chosen type and ID
+-- Returns invoice of chosen type and ID (HELPER - READ)
 DELIMITER $$
-CREATE PROCEDURE getInvoice(IN invoiceType VARCHAR(10), IN receiptID INT)
+CREATE PROCEDURE getInvoice(IN invoiceType VARCHAR(10), IN receiptID INT) 
 BEGIN
     IF invoiceType = 'customer' THEN
         SELECT 'Customer Invoice Selected' AS message;
@@ -459,7 +459,7 @@ DELIMITER ;
 -- CALL getInvoice('employee', 1);
 
 
--- update customer contact information (email or mobile phone number) 
+-- update customer contact information (email or mobile phone number) (UPDATE)
 DELIMITER $$
 CREATE PROCEDURE updateCustomerInfo(IN custID INT, IN in_field VARCHAR(255), IN new_info VARCHAR(255))
 BEGIN
@@ -484,10 +484,38 @@ DELIMITER ;
 -- CALL updateCustomerInfo(1, 'email', 'bob@gmail.com');
 -- CALL updateCustomerInfo(1, 'mobile', '9086738912');
 
+-- update quantity of drug, throws error if ID does not exist or new quantity is negative
+DELIMITER $$
+CREATE PROCEDURE updateDrugQuantity(IN drugID_param INT, IN new_quantity INT)
+BEGIN
+    DECLARE drugExists INT;
+
+    SELECT COUNT(*) INTO drugExists FROM drug WHERE drugID = drugID_param;
+
+    IF drugExists = 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Error: DrugID does not exist.';
+    ELSEIF new_quantity < 0 THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Error: Quantity cannot be negative.';
+    ELSE
+        UPDATE drug
+        SET quantity = new_quantity
+        WHERE drugID = drugID_param;
+    END IF;
+END $$
+DELIMITER ;
+-- TESTS
+-- CALL updateDrugQuantity(5, 100);
+-- CALL updateDrugQuantity(1, -100);
+-- CALL updateDrugQuantity(2, 100);
+
+
 
 ## SHANNEN addAddress & addEmployee BELOW ###############
 
-DROP PROCEDURE IF EXISTS AddAddress;
+-- Adds an address (CREATE)
+DROP PROCEDURE IF EXISTS AddAddress; (
 DELIMITER $$
 CREATE PROCEDURE AddAddress(
     IN streetNum INT,
@@ -506,7 +534,7 @@ DELIMITER ;
 
 CALL AddAddress(40, 'Tuttle Street', 'Boston', 'MA', 02125);
 
--- add address prereq that you can call in addemployee and addcustomer
+-- add address prereq that you can call in addemployee and addcustomer (CREATE)
 ## Manager can add an employee
 DROP PROCEDURE IF EXISTS AddEmployee;
 DELIMITER $$
