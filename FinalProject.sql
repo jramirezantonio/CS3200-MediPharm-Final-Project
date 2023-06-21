@@ -1,4 +1,3 @@
-
 DROP DATABASE IF EXISTS medipharm; 
 CREATE DATABASE medipharm;
 USE medipharm; 
@@ -39,7 +38,7 @@ CREATE TABLE company(
     addressID INT UNIQUE NOT NULL,
     CONSTRAINT company_fk_address
 		FOREIGN KEY(addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES company WRITE;
@@ -60,10 +59,10 @@ CREATE TABLE customer (
     companyName VARCHAR(100) NOT NULL, 
     CONSTRAINT customer_fk_address
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT customer_fk_company
 		FOREIGN KEY (companyName) REFERENCES company(name)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES customer WRITE;
@@ -86,10 +85,10 @@ CREATE TABLE employee (
     companyName VARCHAR(100), 
     CONSTRAINT employee_fk_addresss
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT employee_fk_company
 		FOREIGN KEY (companyName) REFERENCES company(name)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES employee WRITE;
@@ -111,7 +110,7 @@ CREATE TABLE supplier(
 	addressID INT UNIQUE NOT NULL,
     CONSTRAINT supplier_fk_address
 		FOREIGN KEY (addressID) REFERENCES address (addressID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES supplier WRITE;
@@ -133,10 +132,10 @@ CREATE TABLE supplier_receipt(
 	supplierID INT,
     CONSTRAINT supplier_receipt_fk_employee
 		FOREIGN KEY (employeeID) REFERENCES employee (employeeID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT supplier_receipt_fk_supplier
 		FOREIGN KEY (supplierID) REFERENCES supplier (supplierID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES supplier_receipt WRITE;
@@ -158,10 +157,10 @@ CREATE TABLE customer_receipt(
 	customerID INT NOT NULL,
     CONSTRAINT customer_receipt_fk_employee
 		FOREIGN KEY (employeeID) REFERENCES employee (employeeID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT customer_receipt_fk_customer
 		FOREIGN KEY (customerID) REFERENCES customer (customerID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES customer_receipt WRITE;
@@ -177,7 +176,7 @@ CREATE TABLE manufacturer(
 	addressID INT UNIQUE NOT NULL,
     CONSTRAINT manufacturer_fk_address
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES manufacturer WRITE;
@@ -202,7 +201,7 @@ CREATE TABLE drug(
 	storageLocation INT NOT NULL,
     CONSTRAINT drug_fk_manufacturer
 		FOREIGN KEY (manufacturerName) REFERENCES manufacturer(manufacturerName)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES drug WRITE;
@@ -223,7 +222,7 @@ CREATE TABLE stored_drug(
 	dateOfEntry DATE NOT NULL,
     CONSTRAINT stored_drug_fk_drug
 		FOREIGN KEY (drugID) REFERENCES drug(drugID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES stored_drug WRITE;
@@ -239,10 +238,10 @@ CREATE TABLE supplier_company(
     PRIMARY KEY(supplierID, companyName),
     CONSTRAINT company_fk_junc_supplier
 		FOREIGN KEY (supplierID) REFERENCES supplier(supplierID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT supplier_fk_junc_company
 		FOREIGN KEY (companyName) REFERENCES company(name)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES supplier_company WRITE;
@@ -261,10 +260,10 @@ CREATE TABLE supplier_receipt_drug(
     PRIMARY KEY(supplierInvoiceID, batchNO),
     CONSTRAINT drug_fk_junc_supplier_receipt
 		FOREIGN KEY (supplierInvoiceID) REFERENCES supplier_receipt(supplierInvoiceID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT supplier_receipt_fk_junc_drug
 		FOREIGN KEY (batchNO) REFERENCES stored_drug(batchNO)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES supplier_receipt_drug WRITE;
@@ -280,10 +279,10 @@ CREATE TABLE drug_manufacturer(
     PRIMARY KEY(drugID, manufacturerName),
     CONSTRAINT manufacturer_fk_junc_drug
 		FOREIGN KEY (drugID) REFERENCES drug(drugID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT drug_fk_junc_manufacturer
 		FOREIGN KEY (manufacturerName) REFERENCES manufacturer(manufacturerName)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES drug_manufacturer WRITE;
@@ -301,10 +300,10 @@ CREATE TABLE customer_receipt_drug(
     PRIMARY KEY(customerInvoiceID, batchNO),
     CONSTRAINT drug_fk_junc_customer_receipt
 		FOREIGN KEY (customerInvoiceID) REFERENCES customer_receipt(customerInvoiceID)
-		ON UPDATE CASCADE ON DELETE RESTRICT,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT customer_receipt_fk_drug
 		FOREIGN KEY (batchNO) REFERENCES stored_drug(batchNO)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES customer_receipt_drug WRITE;
@@ -313,10 +312,12 @@ INSERT INTO customer_receipt_drug VALUES
 	(2, 2, 10, 100.00);
 UNLOCK TABLES;
 
-## Add drug
-DROP PROCEDURE IF EXISTS AddDrug;
+------------------------------------------------------------------------------------------------------------------------------------
+
+-- Function to insert a new tuple into drug table
+DROP PROCEDURE IF EXISTS NewTupleDrug;
 DELIMITER $$
-CREATE PROCEDURE AddDrug (
+CREATE PROCEDURE NewTupleDrug (
 	IN drugID INT,
 	IN drugName VARCHAR(100),
 	IN scientificName VARCHAR(200),
@@ -331,10 +332,45 @@ CREATE PROCEDURE AddDrug (
 	IN storageLocation INT
 )
 BEGIN
-  INSERT INTO drug (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation)
-	VALUES (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation);
-END $$
+	DECLARE invalid_manufacturer_name TINYINT DEFAULT FALSE;
+	BEGIN 
+		DECLARE EXIT HANDLER FOR 1452
+			SET invalid_manufacturer_name = TRUE;
+  
+		INSERT INTO drug (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation)
+		VALUES (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation);
+        SELECT "1 row was inserted to the drug table" AS message;
+	END;
+    
+	IF invalid_manufacturer_name = TRUE THEN
+		SELECT 'Row was not inserted. Manufacturer name is invalid!' AS message;
+	END IF;
+END$$
 
 DELIMITER ;
 
-CALL AddDrug(5, 'A', 'A', 'depressant', 80.00, 'Schedule I', 50, 'Apex Solutions', '100.00', 1);
+-- NewTupleDrug(...) tests
+-- CALL NewTupleDrug(4, 'Amphetamine', '(RS)-2-phenylpropan-2-amine', 'stimulant', '25.00', 'Schedule III', '100', 'Apexx Solutions', '10.00', 1);
+-- CALL NewTupleDrug(4, 'Amphetamine', '(RS)-2-phenylpropan-2-amine', 'stimulant', '25.00', 'Schedule III', '100', 'Apex Solutions', '10.00', 1);
+-- SELECT * FROM drug;
+
+-- Function to delete an existing drug tuple
+DROP PROCEDURE IF EXISTS DelTupleDrug;
+DELIMITER $$
+CREATE PROCEDURE DelTupleDrug (IN id INT)
+BEGIN
+	DECLARE rows_affected INT;
+	DELETE FROM drug WHERE drugID = id;
+
+	SET rows_affected = ROW_COUNT();
+	IF rows_affected = 0 THEN
+		SIGNAL SQLSTATE '45000'
+		SET MESSAGE_TEXT = 'No matching row found for deletion.';
+	ELSE SELECT '1 row was deleted from table.';
+	END IF;
+END$$
+
+DELIMITER ;
+-- DelTupleDrug tests
+-- CALL DelTupleDrug(4);
+-- SELECT * FROM drug;
