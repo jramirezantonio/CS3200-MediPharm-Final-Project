@@ -1,3 +1,5 @@
+
+DROP DATABASE IF EXISTS medipharm; 
 DROP DATABASE IF EXISTS medipharm; 
 CREATE DATABASE medipharm;
 USE medipharm; 
@@ -9,7 +11,7 @@ CREATE TABLE address (
     streetName VARCHAR(255) NOT NULL,
     city VARCHAR(50) NOT NULL,
     state VARCHAR(50) NOT NULL,
-    zipcode VARCHAR(10) NOT NULL
+    zipcode VARCHAR(5) NOT NULL
 );
 
 LOCK TABLES address WRITE;
@@ -38,7 +40,7 @@ CREATE TABLE company(
     addressID INT UNIQUE NOT NULL,
     CONSTRAINT company_fk_address
 		FOREIGN KEY(addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES company WRITE;
@@ -50,19 +52,20 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS customer;
 CREATE TABLE customer (
-	customerID INT PRIMARY KEY, 
+	customerID INT PRIMARY KEY AUTO_INCREMENT,
     firstName VARCHAR(100) NOT NULL, 
     lastName VARCHAR(100) NOT NULL,
     mobilePhone VARCHAR(10) NOT NULL, 
     emailAddress VARCHAR(255) NOT NULL, 
-	addressID INT UNIQUE NOT NULL,
+	addressID INT UNIQUE DEFAULT NULL,
+    -- when asking for details, first input the address into the address table. get ID from address and use that to get 
     companyName VARCHAR(100) NOT NULL, 
     CONSTRAINT customer_fk_address
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE CASCADE,
+		ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT customer_fk_company
 		FOREIGN KEY (companyName) REFERENCES company(name)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES customer WRITE;
@@ -74,21 +77,21 @@ UNLOCK TABLES;
 
 DROP TABLE IF EXISTS employee;
 CREATE TABLE employee (
-	employeeID INT PRIMARY KEY,
+	employeeID INT PRIMARY KEY AUTO_INCREMENT,
     employeeType ENUM("Manager", "Regular") NOT NULL, 
     firstName VARCHAR(100) NOT NULL, 
     lastName VARCHAR(100) NOT NULL,
     DOB DATE NOT NULL, 
     mobilePhone VARCHAR(10) NOT NULL, 
     emailAddress VARCHAR(255) NOT NULL, 
-	addressID INT UNIQUE NOT NULL,
+	addressID INT UNIQUE DEFAULT NULL,
     companyName VARCHAR(100), 
     CONSTRAINT employee_fk_addresss
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE CASCADE,
+		ON UPDATE CASCADE ON DELETE SET NULL,
 	CONSTRAINT employee_fk_company
 		FOREIGN KEY (companyName) REFERENCES company(name)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 LOCK TABLES employee WRITE;
@@ -107,10 +110,10 @@ CREATE TABLE supplier(
 	companyName VARCHAR(64) NOT NULL,
 	mobilePhone VARCHAR(10) NOT NULL,
 	emailAddress VARCHAR(32) NOT NULL,
-	addressID INT UNIQUE NOT NULL,
+	addressID INT UNIQUE DEFAULT NULL,
     CONSTRAINT supplier_fk_address
 		FOREIGN KEY (addressID) REFERENCES address (addressID)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES supplier WRITE;
@@ -173,10 +176,10 @@ DROP TABLE IF EXISTS manufacturer;
 CREATE TABLE manufacturer(
 	manufacturerName VARCHAR(200) PRIMARY KEY,
 	drugsProduced ENUM("OTC", "BTC") NOT NULL,
-	addressID INT UNIQUE NOT NULL,
+	addressID INT UNIQUE DEFAULT NULL,
     CONSTRAINT manufacturer_fk_address
 		FOREIGN KEY (addressID) REFERENCES address(addressID)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES manufacturer WRITE;
@@ -201,7 +204,7 @@ CREATE TABLE drug(
 	storageLocation INT NOT NULL,
     CONSTRAINT drug_fk_manufacturer
 		FOREIGN KEY (manufacturerName) REFERENCES manufacturer(manufacturerName)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES drug WRITE;
@@ -222,7 +225,7 @@ CREATE TABLE stored_drug(
 	dateOfEntry DATE NOT NULL,
     CONSTRAINT stored_drug_fk_drug
 		FOREIGN KEY (drugID) REFERENCES drug(drugID)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES stored_drug WRITE;
@@ -238,10 +241,10 @@ CREATE TABLE supplier_company(
     PRIMARY KEY(supplierID, companyName),
     CONSTRAINT company_fk_junc_supplier
 		FOREIGN KEY (supplierID) REFERENCES supplier(supplierID)
-		ON UPDATE CASCADE ON DELETE CASCADE,
+		ON UPDATE CASCADE ON DELETE RESTRICT,
 	CONSTRAINT supplier_fk_junc_company
 		FOREIGN KEY (companyName) REFERENCES company(name)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 LOCK TABLES supplier_company WRITE;
@@ -300,10 +303,10 @@ CREATE TABLE customer_receipt_drug(
     PRIMARY KEY(customerInvoiceID, batchNO),
     CONSTRAINT drug_fk_junc_customer_receipt
 		FOREIGN KEY (customerInvoiceID) REFERENCES customer_receipt(customerInvoiceID)
-		ON UPDATE CASCADE ON DELETE CASCADE,
+		ON UPDATE CASCADE ON DELETE SET NULL,
 	CONSTRAINT customer_receipt_fk_drug
 		FOREIGN KEY (batchNO) REFERENCES stored_drug(batchNO)
-		ON UPDATE CASCADE ON DELETE CASCADE
+		ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 LOCK TABLES customer_receipt_drug WRITE;
@@ -314,11 +317,13 @@ UNLOCK TABLES;
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
+#########################################################
 -- Function to insert a new tuple into drug table (CREATE)
+#########################################################
+
 DROP PROCEDURE IF EXISTS NewTupleDrug;
 DELIMITER $$
 CREATE PROCEDURE NewTupleDrug (
-	IN drugID INT,
 	IN drugName VARCHAR(100),
 	IN scientificName VARCHAR(200),
 	IN drugCategory ENUM("depressant", "stimulant", "hallucinogen", "anesthetic", "analgesic", 
@@ -337,8 +342,8 @@ BEGIN
 		DECLARE EXIT HANDLER FOR 1452
 			SET invalid_manufacturer_name = TRUE;
   
-		INSERT INTO drug (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation)
-		VALUES (drugID, drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation);
+		INSERT INTO drug (drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation)
+		VALUES (drugName, scientificName, drugCategory, storageTemp, dangerousLevel, quantity, manufacturerName, unitPrice, storageLocation);
         SELECT "1 row was inserted to the drug table" AS message;
 	END;
     
@@ -354,7 +359,10 @@ DELIMITER ;
 -- CALL NewTupleDrug(4, 'Amphetamine', '(RS)-2-phenylpropan-2-amine', 'stimulant', '25.00', 'Schedule III', '100', 'Apex Solutions', '10.00', 1);
 -- SELECT * FROM drug;
 
+#########################################################
 -- Function to delete an existing drug tuple (DELETE)
+#########################################################
+
 DROP PROCEDURE IF EXISTS DelTupleDrug;
 DELIMITER $$
 CREATE PROCEDURE DelTupleDrug (IN id INT)
@@ -371,12 +379,15 @@ BEGIN
 END$$
 
 DELIMITER ;
+
 -- DelTupleDrug tests
 -- CALL DelTupleDrug(4);
 -- SELECT * FROM drug;
 
-
+#########################################################
 -- returns table of all drugs and their stock (READ)
+#########################################################
+
 DELIMITER $$
 CREATE PROCEDURE returnDrugStock()
 BEGIN
@@ -458,8 +469,10 @@ DELIMITER ;
 -- CALL getInvoice('supplier', 200);
 CALL getInvoice('employee', 1);
 
-
+#########################################################
 -- update customer contact information (email or mobile phone number) (UPDATE)
+#########################################################
+
 DROP PROCEDURE IF EXISTS updateCustomerInfo;
 DELIMITER $$
 CREATE PROCEDURE updateCustomerInfo(IN custID INT, IN in_field VARCHAR(255), IN new_info VARCHAR(255))
@@ -487,7 +500,9 @@ DELIMITER ;
 -- CALL updateCustomerInfo(1, 'email', 'bob@gmail.com');
 -- CALL updateCustomerInfo(1, 'mobile', '9086738912');
 
--- update quantity of drug, throws error if ID does not exist or new quantity is negative
+#########################################################
+-- update quantity of drug, throws error if ID does not exist or new quantity is negative (UPDATE)
+#########################################################
 DROP PROCEDURE IF EXISTS updateDrugQuantity;
 DELIMITER $$
 CREATE PROCEDURE updateDrugQuantity(IN drugID_param INT, IN new_quantity INT)
@@ -515,37 +530,37 @@ DELIMITER ;
 -- CALL updateDrugQuantity(1, -100);
 -- CALL updateDrugQuantity(2, 100);
 
+#########################################################
+-- add new address to tuple (CREATE)
+#########################################################
 
-
-## SHANNEN addAddress & addEmployee BELOW ###############
-
--- Adds an address (CREATE)
-DROP PROCEDURE IF EXISTS AddAddress; (
+DROP PROCEDURE IF EXISTS AddAddress;
 DELIMITER $$
 CREATE PROCEDURE AddAddress(
     IN streetNum INT,
     IN streetName VARCHAR(255),
     IN city VARCHAR(50),
     IN state VARCHAR(50),
-    IN zipcode VARCHAR(10)
+    IN zipcode VARCHAR(5)
 )
 BEGIN
 	-- Insert the address into the address table
 	INSERT INTO address(streetNum, streetName, city, state, zipcode)	
 		VALUES (streetNum, streetName, city, state, zipcode);
-	SELECT "Added address" AS message;
 END $$
 
 DELIMITER ;
+-- Test:
+-- CALL AddAddress(40, 'Tuttle Street', 'Boston', 'MA', 02125);
 
-CALL AddAddress(40, 'Tuttle Street', 'Boston', 'MA', 02125);
+#########################################################
+-- add new employee to tuple using last entered address (CREATE)
+#########################################################
 
--- add address prereq that you can call in addemployee and addcustomer (CREATE)
-## Manager can add an employee
 DROP PROCEDURE IF EXISTS AddEmployee;
 DELIMITER $$
 CREATE PROCEDURE AddEmployee (
-  IN managerID INT, -- manager puts in their ID to put in new employee
+  IN managerID INT, -- companyName of employee is dependent on manager company
   IN employeeType ENUM("Manager", "Regular"),
   IN firstName VARCHAR(100),
   IN lastName VARCHAR(100),
@@ -554,28 +569,38 @@ CREATE PROCEDURE AddEmployee (
   IN emailAddress VARCHAR(225)
 )
 BEGIN
-	DECLARE isManager INT;
     DECLARE addressID INT;
     DECLARE companyName VARCHAR(100);
 	
     SELECT address.addressID INTO addressID  FROM address ORDER BY address.addressID DESC LIMIT 1;
     SELECT employee.companyName INTO companyName FROM employee WHERE managerID = employee.employeeID;
     
-	-- SELECT COUNT(*) INTO isManager WHERE managerID IN (SELECT employeeID FROM employee WHERE employeeType = 'Manager');
-    SELECT COUNT(*) INTO isManager FROM employee WHERE managerID IN (SELECT employeeID FROM employee WHERE employeeType = 'Manager');
-    
-    IF isManager = 1 THEN
-		INSERT INTO employee(employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName)
-			VALUES (employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName);
-            
-		SELECT 'Successfully added employee.' AS Message;
-	ELSE
-		SELECT 'Invalid manager ID. Not authorized to add employee.' AS Message;
-  END IF;
+	INSERT INTO employee(employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName)
+		VALUES (employeeType, firstName, lastName, DOB, mobilePhone, emailAddress, addressID, companyName);
 END $$
 
 DELIMITER ;
 
-CALL AddEmployee (1, 'Regular', 'Shannen', 'Espinosa', '2002-11-06', '6176377190', 'espinosa.s@northeastern.edu');
+-- Test:
+-- CALL AddEmployee (1, 'Regular', 'Shannen', 'Espinosa', '2002-11-06', '6176377190', 'espinosa.s@northeastern.edu');
+-- SELECT * FROM employee;
 
-Select * from drug;
+#########################################################
+-- delete employee from tuple (DELETE)
+#########################################################
+
+DROP PROCEDURE IF EXISTS DeleteEmployee;
+DELIMITER $$
+CREATE PROCEDURE DeleteEmployee (
+  IN empID INT
+)
+BEGIN
+	DELETE FROM employee WHERE employeeID = empID;
+	SELECT 'Successfully deleted employee.' AS Message;
+END $$
+
+DELIMITER ;
+
+-- Test:
+-- CALL DeleteEmployee (1);
+-- SELECT * FROM employee;
