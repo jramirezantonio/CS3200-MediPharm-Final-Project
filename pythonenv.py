@@ -28,6 +28,8 @@ while True:
 
 def work():
     try:
+        loggedIn = True
+
         c1 = connection.cursor()
         givenID = int(input('Enter employee ID: '))
         givenID_type = 'SELECT employeeID, employeeType, firstName FROM employee WHERE employeeID = %s'
@@ -45,13 +47,14 @@ def work():
               '### WELCOME ' + empName.upper() + '! ###\n' +
               '#####################\n')
 
-        if empType == 'Manager':
-            isManager = True
-        else:
-            isManager = False
+        while loggedIn:
+            if empType == 'Manager':
+                isManager = True
+            else:
+                isManager = False
 
-        userinput(isManager, givenID)
-        c1.close()
+            loggedIn = userinput(isManager, givenID)
+            c1.close()
 
     except pymysql.Error as e:
         print('Error: %d: %s' % (e.args[0], e.args[1]))
@@ -81,9 +84,6 @@ def userinput(isManager, givenID):
             if choice in [1, 2, 3, 4, 5, 6, 7, 8]:
                 menu_input(choice, givenID)
                 userinput(isManager, givenID)
-            elif choice == 0:
-                print('Logging out...')
-                loggedIn = False
             else:
                 print('Not authorized to do anything else.')
 
@@ -100,11 +100,14 @@ def userinput(isManager, givenID):
             if choice in [1, 2, 3, 4, 5, 6]:
                 menu_input(choice, givenID)
                 userinput(isManager, givenID)
-            elif choice == 0:
-                print('Logging out...')
-                loggedIn = False
             else:
                 print('Not authorized to do anything else.')
+
+        if choice == 0:
+            print('Logging out...')
+            return False
+        else:
+            return True
 
 
 def menu_input(selected, givenID):
@@ -148,7 +151,7 @@ def menu_input(selected, givenID):
         else:
             invoice_type = 'supplier'
 
-        receipt_id = int(input('Which receipt ID are you searching for?'))
+        receipt_id = int(input('Which receipt ID are you searching for? '))
 
         get_invoice(invoice_type, receipt_id)
 
@@ -170,7 +173,7 @@ def menu_input(selected, givenID):
             field = 'email'
             newField = input('Enter new email: ')
 
-        update_cust_info([custID, field, newField])
+        update_cust_info(custID, field, newField)
 
     elif selected == 7:
         selected_7(givenID)
@@ -250,21 +253,24 @@ def get_invoice(invoice_type, receipt_id):
         c7.close()
 
 
-def update_cust_info(params):
+def update_cust_info(custID, field, newField):
     c8 = connection.cursor()
-    c8.callproc('updateCustomerInfo', tuple((par for par in params)))
+    c8.callproc('updateCustomerInfo', (custID, field, newField))
     print("Updating customer info...")
+
+    query = 'SELECT * FROM customer WHERE customerID = %s'
+    c8.execute(query, (custID, ))
     for row in c8.fetchall():
         print(row)
         c8.close()
 
 
-def update_drug_quant(id, quant):
+def update_drug_quant(drugID, quant):
     c9 = connection.cursor()
-    c9.callproc('updateDrugQuantity', (id, quant))
+    c9.callproc('updateDrugQuantity', (drugID, quant))
     print("Updating drug quantity...")
 
-    query = 'SELECT drugID, drugName, quantity FROM drug'
+    query = 'SELECT drugID, drugName, quantity FROM drug WHERE drugID = drugID'
     c9.execute(query)
     for row in c9.fetchall():
         print(row)
