@@ -204,7 +204,7 @@ CREATE TABLE drug(
 	storageLocation INT NOT NULL,
     CONSTRAINT drug_fk_manufacturer
 		FOREIGN KEY (manufacturerName) REFERENCES manufacturer(manufacturerName)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES drug WRITE;
@@ -225,7 +225,7 @@ CREATE TABLE stored_drug(
 	dateOfEntry DATE NOT NULL,
     CONSTRAINT stored_drug_fk_drug
 		FOREIGN KEY (drugID) REFERENCES drug(drugID)
-		ON UPDATE CASCADE ON DELETE RESTRICT
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES stored_drug WRITE;
@@ -303,10 +303,10 @@ CREATE TABLE customer_receipt_drug(
     PRIMARY KEY(customerInvoiceID, batchNO),
     CONSTRAINT drug_fk_junc_customer_receipt
 		FOREIGN KEY (customerInvoiceID) REFERENCES customer_receipt(customerInvoiceID)
-		ON UPDATE CASCADE ON DELETE SET NULL,
+		ON UPDATE CASCADE ON DELETE CASCADE,
 	CONSTRAINT customer_receipt_fk_drug
 		FOREIGN KEY (batchNO) REFERENCES stored_drug(batchNO)
-		ON UPDATE CASCADE ON DELETE SET NULL
+		ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 LOCK TABLES customer_receipt_drug WRITE;
@@ -467,7 +467,7 @@ DELIMITER ;
 -- CALL getInvoice('customer', 200); 
 -- CALL getInvoice('supplier', 2);
 -- CALL getInvoice('supplier', 200);
-CALL getInvoice('employee', 1);
+-- CALL getInvoice('employee', 1);
 
 #########################################################
 -- update customer contact information (email or mobile phone number) (UPDATE)
